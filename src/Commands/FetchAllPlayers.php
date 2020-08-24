@@ -132,12 +132,12 @@ final class FetchAllPlayers extends Command
 
             // Health points: %02f of %d<br>%d percent healing per hour
             $healthPoints = $crawler->filter('.img-showuser-life~a')->attr('rel');
-            preg_match('#Health points: ([0-9]+\.[0-9]+) of ([0-9]+)#', $healthPoints, $matches);
+            preg_match('#Health points: ([0-9,]+\.[0-9]+) of ([0-9]+)#', $healthPoints, $matches);
             list ($healthPointsStr, $currentHP, $maxHP) = $matches;
 
             // Experience: %d of %d
             $expPoints = $crawler->filter('.img-showuser-xp~a')->attr('rel');
-            preg_match('#Experience: ([0-9]+) of ([0-9]+)#', $expPoints, $matches);
+            preg_match('#Experience: ([0-9,]+) of ([0-9]+)#', $expPoints, $matches);
             list ($expPointsStr, $currentExp, $maxExp) = $matches;
 
             // Player properties
@@ -147,7 +147,10 @@ final class FetchAllPlayers extends Command
             $player->experience = (int) $currentExp;
 
             $alignment = $crawler->filter('.tooltip[rel~="Alignment:"]')->attr('rel');
-            preg_match('#([+-][0-9]+)#', $alignment, $matches);
+            preg_match('#~(\-?[0-9,]+)#', $alignment, $matches);
+            if (count($matches) === 0) {
+                var_dump($alignment, $player->url); die;
+            }
             list ($alignmentStr, $alignment) = $matches;
 
             $player->alignment = (int) $alignment;
@@ -165,8 +168,14 @@ final class FetchAllPlayers extends Command
             $player->oneHandedAttack = $fetchStatNumber($stats->eq(6));
             $player->twoHandedAttack = $fetchStatNumber($stats->eq(7));
 
-            $createdAt = $crawler->filter('.box-bg-profil table:nth-child(1) .tdn:nth-child(2)')->text();
-            $player->createdAt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $createdAt);
+            $crawler->filter('.box-bg-profil table:nth-child(1) tr')->each(function (Crawler $row) use ($player) {
+                if ($row->filter('td')->eq(0)->text() === 'Knight since:') {
+                    $player->createdAt = DateTimeImmutable::createFromFormat(
+                        'Y-m-d H:i:s',
+                        $row->filter('td')->eq(1)->text(),
+                    );
+                }
+            });
 
             $statistics = $crawler->filter('.box-bg-profil table:nth-child(2) tr');
             $player->totalLoot = (int) str_replace(',', '', $statistics->eq(2)->filter('td:nth-child(2)')->text());
@@ -179,7 +188,7 @@ final class FetchAllPlayers extends Command
             $player->damageToEnemies = (int) $statistics->eq(10)->filter('td:nth-child(2)')->text();
             $player->damageFromEnemies = (int) $statistics->eq(11)->filter('td:nth-child(2)')->text();
 
-            $this->playerRepository->store($player);
+             $this->playerRepository->store($player);
         }
 
         return 0;
