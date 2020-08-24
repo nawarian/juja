@@ -16,6 +16,7 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\UriFactoryInterface;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DomCrawler\Crawler;
@@ -47,8 +48,6 @@ final class FetchAllPlayers extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $output->writeln('Loading stats from KF.');
-
         $serverAddress = getenv('KF_SERVER');
         $account = getenv('KF_ACCOUNT');
         $password = getenv('KF_PASSWORD');
@@ -57,7 +56,7 @@ final class FetchAllPlayers extends Command
             $output->writeln('FATAL ERROR: check the .env file.');
         }
 
-        $this->login();
+        $this->login($output);
 
         $csrf = function (string $responseBody) : string {
             $crawler = new Crawler($responseBody);
@@ -69,6 +68,10 @@ final class FetchAllPlayers extends Command
         $highScoreRequest = $this->createAuthenticatedRequest('GET', '/highscore/');
         $players = [];
         $count = 100;
+
+        $output->writeln('Fetching players from highscore...');
+        $progressBar = new ProgressBar($output);
+        $progressBar->start();
         do {
             $highScoreResponse = $this->httpClient->sendRequest($highScoreRequest);
             $highScoreResponseBody = $highScoreResponse->getBody()->getContents();
@@ -104,7 +107,15 @@ final class FetchAllPlayers extends Command
                     'csrftoken' => $csrf($highScoreResponseBody),
                     'count' => $count,
                 ])));
+
+            $progressBar->advance();
         } while (true);
+        $progressBar->finish();
+        $output->writeln('');
+
+        $output->writeln('Fetched all urls, fetching profile and statuses.');
+        $progressBar = new ProgressBar($output, count($players));
+        $progressBar->start();
 
         // Fetch all players' information
         $fetchStatNumber = function (Crawler $sword) {
@@ -137,7 +148,7 @@ final class FetchAllPlayers extends Command
 
             // Experience: %d of %d
             $expPoints = $crawler->filter('.img-showuser-xp~a')->attr('rel');
-            preg_match('#Experience: ([0-9,]+) of ([0-9]+)#', $expPoints, $matches);
+            preg_match('#Experience: (-?[0-9,]+) of ([0-9]+)#', $expPoints, $matches);
             list ($expPointsStr, $currentExp, $maxExp) = $matches;
 
             // Player properties
@@ -148,9 +159,6 @@ final class FetchAllPlayers extends Command
 
             $alignment = $crawler->filter('.tooltip[rel~="Alignment:"]')->attr('rel');
             preg_match('#~(\-?[0-9,]+)#', $alignment, $matches);
-            if (count($matches) === 0) {
-                var_dump($alignment, $player->url); die;
-            }
             list ($alignmentStr, $alignment) = $matches;
 
             $player->alignment = (int) $alignment;
@@ -189,13 +197,24 @@ final class FetchAllPlayers extends Command
             $player->damageFromEnemies = (int) $statistics->eq(11)->filter('td:nth-child(2)')->text();
 
              $this->playerRepository->store($player);
+
+             $progressBar->advance();
         }
+
+        $progressBar->finish();
+
+        $output->writeln('All players fetched. Exiting.');
 
         return 0;
     }
 
-    private function login(): void
+    private function login(OutputInterface $output): void
     {
+        $output->writeln('Logging in.');
+        $progressBar = new ProgressBar($output, 5);
+
+        $progressBar->start();
+
         // Get login url
         $uri = $this->uriFactory->createUri(getenv('KF_SERVER'));
         $homeRequest = $this->requestFactory->createRequest('GET', $uri);
@@ -211,6 +230,8 @@ final class FetchAllPlayers extends Command
             }
         }
 
+        $progressBar->advance();
+
         // Fetch login form/csrf token
         $moonIdLoginPageRequest = $this->requestFactory->createRequest('GET', $loginUrl);
         $moonIdLoginPageResponse = $this->httpClient->sendRequest($moonIdLoginPageRequest);
@@ -221,6 +242,8 @@ final class FetchAllPlayers extends Command
             /** @var ResponseInterface $moonIdLoginPageResponse */
             $moonIdLoginPageResponse,
         ) = $this->followAllRedirects($moonIdLoginPageRequest, $moonIdLoginPageResponse);
+
+        $progressBar->advance();
 
         $moonIdCookieJar = new CookieJar();
         $moonIdCookieJar->extractCookies($moonIdLoginPageRequest, $moonIdLoginPageResponse);
@@ -251,6 +274,8 @@ final class FetchAllPlayers extends Command
             ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
             ->withBody(Stream::create($formEncodedData));
 
+        $progressBar->advance();
+
         $loginRequest = $moonIdCookieJar->withCookieHeader($loginRequest);
         $loginResponse = $this->httpClient->sendRequest($loginRequest);
 
@@ -276,6 +301,8 @@ final class FetchAllPlayers extends Command
             throw new RuntimeException('Login failed 2.');
         }
 
+        $progressBar->advance();
+
         // Follow last redirect to fetch KF_SERVER login token
         $tokenRequest = $this->requestFactory->createRequest('GET', $loginResponse->getHeader('location')[0]);
         $tokenResponse = $this->httpClient->sendRequest($tokenRequest);
@@ -286,6 +313,10 @@ final class FetchAllPlayers extends Command
 
         // Store session data
         $this->cookies->extractCookies($tokenRequest, $tokenResponse);
+
+        $progressBar->finish();
+
+        $output->writeln('');
     }
 
     private function followAllRedirects(RequestInterface $request, ResponseInterface $response): array
