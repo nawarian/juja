@@ -101,9 +101,72 @@ final class LoadStats extends Command
                 ])));
         } while (true);
 
+        // Summary
+        $levelCounts = [];
         foreach ($players as $player) {
-            echo "{$player['name']} - Lv. {$player['level']} ({$player['url']})\n";
+            $levelCounts[$player['level']] = $levelCounts[$player['level']] ?? 0;
+            $levelCounts[$player['level']]++;
         }
+
+        ksort($levelCounts);
+        echo 'Level | Count' . PHP_EOL;
+        echo '----- | -----' . PHP_EOL;
+
+        foreach ($levelCounts as $level => $count) {
+            echo str_pad((string) $level, 5, ' ', STR_PAD_RIGHT) . ' | ' . str_pad((string) $count, 5, ' ', STR_PAD_RIGHT) . PHP_EOL;
+        }
+
+        // Fetch all Lv $level players informations
+        $level = 4;
+        $players = array_filter($players, function (array $player) use ($level) { return $player['level'] == $level; });
+
+        $fetchStatNumber = function (Crawler $sword) {
+            $numbers = [];
+            foreach ($sword->filter('div[class$="elem"] > img') as $image) {
+                $number = $image->getAttribute('src');
+                $number = trim(pathinfo($number, PATHINFO_FILENAME), 'b');
+
+                $numbers[] = $number;
+            }
+
+            return (int) implode('', $numbers);
+        };
+
+        foreach ($players as $player) {
+            $playerStatsRequest = $this->createAuthenticatedRequest('GET', parse_url($player['url'], PHP_URL_PATH));
+            $playerStatsResponse = $this->httpClient->sendRequest($playerStatsRequest);
+
+            $crawler = new Crawler($playerStatsResponse->getBody()->getContents());
+
+            // Health points: %02f of %d<br>%d percent healing per hour
+            $healthPoints = $crawler->filter('.img-showuser-life~a')->attr('rel');
+            preg_match('#Health points: ([0-9]+\.[0-9]+) of ([0-9]+)#', $healthPoints, $matches);
+            list ($healthPointsStr, $currentHP, $maxHP) = $matches;
+
+            // Experience: %d of %d
+            $expPoints = $crawler->filter('.img-showuser-xp~a')->attr('rel');
+            preg_match('#Experience: ([0-9]+) of ([0-9]+)#', $expPoints, $matches);
+            list ($expPointsStr, $currentExp, $maxExp) = $matches;
+
+            // Attributes
+            $stats = $crawler->filter('.sc');
+
+            $players[$player['name']] = array_merge($player, [
+                'hp' => "{$currentHP}/{$maxHP}",
+                'ex' => "{$currentExp}/{$maxExp}",
+                'str' => $fetchStatNumber($stats->eq(0)),
+                'sta' => $fetchStatNumber($stats->eq(1)),
+                'dex' => $fetchStatNumber($stats->eq(2)),
+                'atk' => $fetchStatNumber($stats->eq(3)),
+                'def' => $fetchStatNumber($stats->eq(4)),
+
+                'arm' => $fetchStatNumber($stats->eq(5)),
+                'one' => $fetchStatNumber($stats->eq(6)),
+                'two' => $fetchStatNumber($stats->eq(7)),
+            ]);
+        }
+
+        var_dump($players);
 
         return 0;
     }
