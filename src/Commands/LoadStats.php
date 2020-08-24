@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nawarian\KFStats\Commands;
 
 use DOMElement;
+use RuntimeException;
 use GuzzleHttp\Cookie\CookieJar;
 use GuzzleHttp\Cookie\SetCookie;
 use Nyholm\Psr7\Stream;
@@ -53,6 +54,15 @@ final class LoadStats extends Command
         }
 
         $this->login();
+
+        // Get highscore
+        $highScoreUri = $this->uriFactory->createUri("{$serverAddress}/highscore/");
+        $highScoreRequest = $this->requestFactory->createRequest('GET', $highScoreUri);
+        $highScoreRequest = $this->cookies->withCookieHeader($highScoreRequest);
+        $highScoreResponse = $this->httpClient->sendRequest($highScoreRequest);
+
+        // @TODO -> fetch entire highscore
+        echo ($highScoreResponse->getBody()->getContents()); die;
 
         return 0;
     }
@@ -111,24 +121,44 @@ final class LoadStats extends Command
             ->withUri(
                 $this->uriFactory->createUri($form->getUri())
             )->withHeader('Referer', (string) $moonIdLoginPageRequest->getUri())
-            ->withBody(Stream::create(
-                $formEncodedData
-            ));
+            ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
+            ->withBody(Stream::create($formEncodedData));
 
-        /** @var SetCookie $cookie */
-        $cookies = [];
-        foreach ($moonIdCookieJar as $cookie) {
-            $cookieName = $cookie->getName();
-            $cookies[] = str_replace("{$cookieName}=", '', $cookie->getValue());
+        $loginRequest = $moonIdCookieJar->withCookieHeader($loginRequest);
+        $loginResponse = $this->httpClient->sendRequest($loginRequest);
+
+        if ($loginResponse->getStatusCode() !== 302) {
+            throw new RuntimeException('Login failed.');
         }
-        $loginRequest = $loginRequest->withHeader('cookie', $cookies);
+        
+        // Follow first redirect to /api/account/connect/{server}/
+        $moonIdCookieJar = new CookieJar();
+        $moonIdCookieJar->extractCookies($loginRequest, $loginResponse);
 
-        echo(
-            $this->httpClient->sendRequest($loginRequest)
-                ->getBody()->getContents()
-        ); die;
+        $loginRequest = $loginRequest->withUri(
+            $loginRequest->getUri()->withPath($loginResponse->getHeader('location')[0])
+        )->withMethod('GET')
+        ->withoutHeader('referer')
+        ->withoutHeader('host')
+        ->withoutHeader('content-type');
+
+        $loginRequest = $moonIdCookieJar->withCookieHeader($loginRequest);
+        $loginResponse = $this->httpClient->sendRequest($loginRequest);
+
+        if ($loginResponse->getStatusCode() !== 302 || str_contains($loginResponse->getHeader('location')[0], getenv('KF_SERVER')) === false) {
+            throw new RuntimeException('Login failed 2.');
+        }
+
+        // Follow last redirect to fetch KF_SERVER login token
+        $tokenRequest = $this->requestFactory->createRequest('GET', $loginResponse->getHeader('location')[0]);
+        $tokenResponse = $this->httpClient->sendRequest($tokenRequest);
+
+        if ($tokenResponse->getStatusCode() !== 302) {
+            throw new RuntimeException('Login failed 3.');
+        }
 
         // Store session data
+        $this->cookies->extractCookies($tokenRequest, $tokenResponse);
     }
 
     private function followAllRedirects(RequestInterface $request, ResponseInterface $response): array
@@ -154,7 +184,7 @@ final class LoadStats extends Command
                 $nextUri = $nextUri->withPath($location);
             }
 
-            $request = $request->withUri($nextUri->withQuery($query));
+            $request = $request->withUri($nextUri->withQuery($query))->withMethod('GET');
             $response = $this->httpClient->sendRequest($request);
         } while (true);
 
