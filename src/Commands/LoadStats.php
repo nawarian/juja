@@ -55,12 +55,55 @@ final class LoadStats extends Command
 
         $this->login();
 
-        // Get highscore
-        $highScoreRequest = $this->createAuthenticatedRequest('GET', '/highscore/');
-        $highScoreResponse = $this->httpClient->sendRequest($highScoreRequest);
+        $csrf = function (string $responseBody) : string {
+            $crawler = new Crawler($responseBody);
 
-        // @TODO -> fetch entire highscore
-        echo ($highScoreResponse->getBody()->getContents()); die;
+            return $crawler->filter('input[name=csrftoken]')->attr('value');
+        };
+
+        // The first request fetches the first 100 items and the CSRF token
+        $highScoreRequest = $this->createAuthenticatedRequest('GET', '/highscore/');
+        $players = [];
+        $count = 100;
+        do {
+            $highScoreResponse = $this->httpClient->sendRequest($highScoreRequest);
+            $highScoreResponseBody = $highScoreResponse->getBody()->getContents();
+            $crawler = new Crawler($highScoreResponseBody);
+
+            // .highscore always has at least one, which is the current account
+            $hasPlayers = $crawler->filter('.highscore')->count() > 1;
+            if ($hasPlayers === false) {
+                break;
+            }
+
+            $crawler->filter('.highscore')->each(function (Crawler $player) use (&$players) {
+                $name = $player->filter('td:nth-child(2) a')->text();
+
+                $players[$name] = [
+                    'name' => $name,
+                    'url' => $player->filter('td:nth-child(2) a')->attr('href'),
+                    'level' => $player->filter('td:nth-child(3)')->text(),
+                ];
+            });
+
+            $count += 100;
+            $highScoreRequest = $this->createAuthenticatedRequest('POST', '?fragment=1')
+                ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
+                ->withBody(Stream::create(http_build_query([
+                    'ac' => 'highscore',
+                    'sac' => 'spieler',
+                    'sort' => 1,
+                    'csort' => 1,
+                    'filter' => 'beute',
+                    'clanfilter' => 'beute',
+                    'csrftoken' => $csrf($highScoreResponseBody),
+                    'count' => $count,
+                ])));
+        } while (true);
+
+        foreach ($players as $player) {
+            echo "{$player['name']} - Lv. {$player['level']} ({$player['url']})\n";
+        }
 
         return 0;
     }
