@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Nawarian\KFStats\Commands;
 
-use DOMElement;
+use DateTimeImmutable;
+use Nawarian\KFStats\Entities\Player\Player;
+use Nawarian\KFStats\Entities\Player\PlayerRepository;
 use RuntimeException;
 use GuzzleHttp\Cookie\CookieJar;
-use GuzzleHttp\Cookie\SetCookie;
 use Nyholm\Psr7\Stream;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
@@ -19,24 +20,27 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DomCrawler\Crawler;
 
-final class LoadStats extends Command
+final class FetchAllPlayers extends Command
 {
     private ClientInterface $httpClient;
     private RequestFactoryInterface $requestFactory;
     private UriFactoryInterface $uriFactory;
+    private PlayerRepository $playerRepository;
 
     private CookieJar $cookies;
 
     public function __construct(
         ClientInterface $httpClient,
         RequestFactoryInterface $requestFactory,
-        UriFactoryInterface $uriFactory
+        UriFactoryInterface $uriFactory,
+        PlayerRepository $playerRepository
     ) {
         parent::__construct();
 
         $this->httpClient = $httpClient;
         $this->requestFactory = $requestFactory;
         $this->uriFactory = $uriFactory;
+        $this->playerRepository = $playerRepository;
 
         $this->cookies = new CookieJar();
     }
@@ -76,14 +80,15 @@ final class LoadStats extends Command
                 break;
             }
 
-            $crawler->filter('.highscore')->each(function (Crawler $player) use (&$players) {
-                $name = $player->filter('td:nth-child(2) a')->text();
+            $crawler->filter('.highscore')->each(function (Crawler $playerCrawler) use (&$players) {
+                $name = $playerCrawler->filter('td:nth-child(2) a')->text();
 
-                $players[$name] = [
-                    'name' => $name,
-                    'url' => $player->filter('td:nth-child(2) a')->attr('href'),
-                    'level' => $player->filter('td:nth-child(3)')->text(),
-                ];
+                $player = new Player();
+                $player->name = $name;
+                $player->url = $playerCrawler->filter('td:nth-child(2) a')->attr('href');
+                $player->level = (int) $playerCrawler->filter('td:nth-child(3)')->text();
+
+                $players[$name] = $player;
             });
 
             $count += 100;
@@ -101,25 +106,7 @@ final class LoadStats extends Command
                 ])));
         } while (true);
 
-        // Summary
-        $levelCounts = [];
-        foreach ($players as $player) {
-            $levelCounts[$player['level']] = $levelCounts[$player['level']] ?? 0;
-            $levelCounts[$player['level']]++;
-        }
-
-        ksort($levelCounts);
-        echo 'Level | Count' . PHP_EOL;
-        echo '----- | -----' . PHP_EOL;
-
-        foreach ($levelCounts as $level => $count) {
-            echo str_pad((string) $level, 5, ' ', STR_PAD_RIGHT) . ' | ' . str_pad((string) $count, 5, ' ', STR_PAD_RIGHT) . PHP_EOL;
-        }
-
-        // Fetch all Lv $level players informations
-        $level = 4;
-        $players = array_filter($players, function (array $player) use ($level) { return $player['level'] == $level; });
-
+        // Fetch all players' information
         $fetchStatNumber = function (Crawler $sword) {
             $numbers = [];
             foreach ($sword->filter('div[class$="elem"] > img') as $image) {
@@ -132,8 +119,13 @@ final class LoadStats extends Command
             return (int) implode('', $numbers);
         };
 
+        /** @var Player $player */
         foreach ($players as $player) {
-            $playerStatsRequest = $this->createAuthenticatedRequest('GET', parse_url($player['url'], PHP_URL_PATH));
+            $playerStatsRequest = $this->createAuthenticatedRequest(
+                'GET',
+                parse_url($player->url, PHP_URL_PATH),
+            );
+
             $playerStatsResponse = $this->httpClient->sendRequest($playerStatsRequest);
 
             $crawler = new Crawler($playerStatsResponse->getBody()->getContents());
@@ -148,25 +140,47 @@ final class LoadStats extends Command
             preg_match('#Experience: ([0-9]+) of ([0-9]+)#', $expPoints, $matches);
             list ($expPointsStr, $currentExp, $maxExp) = $matches;
 
-            // Attributes
+            // Player properties
+            $player->id = (int) $crawler->filter('.tooltip[rel~="Level:"]')->text();
+            $player->currentHP = (float) $currentHP;
+            $player->maxHP = (int) $maxHP;
+            $player->experience = (int) $currentExp;
+
+            $alignment = $crawler->filter('.tooltip[rel~="Alignment:"]')->attr('rel');
+            preg_match('#([+-][0-9]+)#', $alignment, $matches);
+            list ($alignmentStr, $alignment) = $matches;
+
+            $player->alignment = (int) $alignment;
+
+            // Attributes & Skills
             $stats = $crawler->filter('.sc');
 
-            $players[$player['name']] = array_merge($player, [
-                'hp' => "{$currentHP}/{$maxHP}",
-                'ex' => "{$currentExp}/{$maxExp}",
-                'str' => $fetchStatNumber($stats->eq(0)),
-                'sta' => $fetchStatNumber($stats->eq(1)),
-                'dex' => $fetchStatNumber($stats->eq(2)),
-                'atk' => $fetchStatNumber($stats->eq(3)),
-                'def' => $fetchStatNumber($stats->eq(4)),
+            $player->strength = $fetchStatNumber($stats->eq(0));
+            $player->stamina = $fetchStatNumber($stats->eq(1));
+            $player->dexterity = $fetchStatNumber($stats->eq(2));
+            $player->fightingAbility = $fetchStatNumber($stats->eq(3));
+            $player->parry = $fetchStatNumber($stats->eq(4));
 
-                'arm' => $fetchStatNumber($stats->eq(5)),
-                'one' => $fetchStatNumber($stats->eq(6)),
-                'two' => $fetchStatNumber($stats->eq(7)),
-            ]);
+            $player->armour = $fetchStatNumber($stats->eq(5));
+            $player->oneHandedAttack = $fetchStatNumber($stats->eq(6));
+            $player->twoHandedAttack = $fetchStatNumber($stats->eq(7));
+
+            $createdAt = $crawler->filter('.box-bg-profil table:nth-child(1) .tdn:nth-child(2)')->text();
+            $player->createdAt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $createdAt);
+
+            $statistics = $crawler->filter('.box-bg-profil table:nth-child(2) tr');
+            $player->totalLoot = (int) str_replace(',', '', $statistics->eq(2)->filter('td:nth-child(2)')->text());
+            $player->totalBattles = (int) $statistics->eq(4)->filter('td:nth-child(2)')->text();
+            $player->wins = (int) $statistics->eq(5)->filter('td:nth-child(2)')->text();
+            $player->losses = (int) $statistics->eq(6)->filter('td:nth-child(2)')->text();
+            $player->undecided = (int) $statistics->eq(7)->filter('td:nth-child(2)')->text();
+            $player->goldReceived = (int) str_replace(',', '', $statistics->eq(8)->filter('td:nth-child(2)')->text());
+            $player->goldLost = (int) str_replace(',', '', $statistics->eq(9)->filter('td:nth-child(2)')->text());
+            $player->damageToEnemies = (int) $statistics->eq(10)->filter('td:nth-child(2)')->text();
+            $player->damageFromEnemies = (int) $statistics->eq(11)->filter('td:nth-child(2)')->text();
+
+            $this->playerRepository->store($player);
         }
-
-        var_dump($players);
 
         return 0;
     }

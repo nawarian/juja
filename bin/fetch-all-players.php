@@ -2,7 +2,7 @@
 
 use DI\ContainerBuilder;
 use Dotenv\Dotenv;
-use Nawarian\KFStats\Commands\LoadStats;
+use Nawarian\KFStats\Commands\FetchAllPlayers;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -17,5 +17,5 @@ $dotEnv->load();
 
 $container = $containerBuilder->build();
 
-$container->get(LoadStats::class)
+$container->get(FetchAllPlayers::class)
     ->run($container->get(InputInterface::class), $container->get(OutputInterface::class));

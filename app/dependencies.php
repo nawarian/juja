@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use DI\ContainerBuilder;
 use GuzzleHttp\Client;
+use Nawarian\KFStats\Entities\Player\PlayerRepository;
+use Nawarian\KFStats\Repositories\InMemory\PlayerRepository as InMemoryPlayerRepository;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Symfony\Component\Console\Input\{ArgvInput, InputInterface};
 use Symfony\Component\Console\Output\{OutputInterface, ConsoleOutput};
@@ -23,5 +25,7 @@ return function (ContainerBuilder $containerBuilder) {
 
         InputInterface::class => autowire(ArgvInput::class),
         OutputInterface::class => autowire(ConsoleOutput::class),
+
+        PlayerRepository::class => autowire(InMemoryPlayerRepository::class),
     ]);
 };
