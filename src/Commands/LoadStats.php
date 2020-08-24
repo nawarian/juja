@@ -56,9 +56,7 @@ final class LoadStats extends Command
         $this->login();
 
         // Get highscore
-        $highScoreUri = $this->uriFactory->createUri("{$serverAddress}/highscore/");
-        $highScoreRequest = $this->requestFactory->createRequest('GET', $highScoreUri);
-        $highScoreRequest = $this->cookies->withCookieHeader($highScoreRequest);
+        $highScoreRequest = $this->createAuthenticatedRequest('GET', '/highscore/');
         $highScoreResponse = $this->httpClient->sendRequest($highScoreRequest);
 
         // @TODO -> fetch entire highscore
@@ -189,5 +187,15 @@ final class LoadStats extends Command
         } while (true);
 
         return [$request, $response];
+    }
+
+    private function createAuthenticatedRequest(string $method, string $path): RequestInterface
+    {
+        $serverAddress = trim(getenv('KF_SERVER'), '/');
+        $uri = $this->uriFactory->createUri("{$serverAddress}/{$path}");
+
+        return $this->cookies->withCookieHeader(
+            $this->requestFactory->createRequest($method, $uri),
+        );
     }
 }
