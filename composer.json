@@ -1,0 +1,31 @@
+{
+    "name": "nawarian/kfstats",
+    "description": "A Knight Fight game stats fetcher",
+    "type": "project",
+    "require": {
+        "php": ">=7.4",
+        "php-di/php-di": "^6.2",
+        "symfony/dom-crawler": "^5.1",
+        "symfony/css-selector": "^5.1",
+        "symfony/console": "^5.1",
+        "vlucas/phpdotenv": "^5.1",
+        "psr/http-factory": "^1.0",
+        "psr/http-message": "^1.0",
+        "nyholm/psr7": "^1.3",
+        "psr/http-client": "^1.0",
+        "guzzlehttp/guzzle": "^7.0"
+    },
+    "license": "GNU-GPL3",
+    "authors": [
+        {
+            "name": "Nawarian",
+            "email": "nickolas@phpsp.org.br"
+        }
+    ],
+    "minimum-stability": "stable",
+    "autoload": {
+        "psr-4": {
+            "Nawarian\\KFStats\\": "src/"
+        }
+    }
+}
