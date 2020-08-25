@@ -166,12 +166,14 @@ final class GameConsole extends Command
         int $offset
     ): void {
         $this->clearScreen($input, $output);
+        $style = new SymfonyStyle($input, $output);
         $table = new Table($output);
 
         $playerRows = [];
-        $players = $this->playerRepository->fetchPlayersWeakerThan($this->player, 10, $offset * 10);
+        $players = $this->playerRepository->fetchPlayersWeakerThan($this->player, 5, $offset * 5);
         foreach ($players as $player) {
             $playerRows[] = [
+                $player->id,
                 $player->name,
                 $player->level,
                 $player->strength,
@@ -179,11 +181,13 @@ final class GameConsole extends Command
                 $player->dexterity,
                 $player->fightingAbility,
                 $player->parry,
+                str_pad(number_format($player->goldReceived, 0, '', '.'), 7, ' ', STR_PAD_LEFT),
+                str_pad(number_format($player->goldLost, 0, '', '.'), 7, ' ', STR_PAD_LEFT),
             ];
         }
 
         $table
-            ->setHeaders(['Name', 'Level', 'Str', 'Sta', 'Dex', 'Fight Ability', 'Parry'])
+            ->setHeaders(['ID', 'Name', 'Level', 'Str', 'Sta', 'Dex', 'Fight Ability', 'Parry', 'Gold +', 'Gold -'])
             ->setRows($playerRows);
 
         $table->render();
@@ -193,6 +197,7 @@ final class GameConsole extends Command
             [
                 'load more' => 'Load more...',
                 'attack' => 'Attack a player',
+                'open' => 'Open player url',
                 'cancel' => 'Cancel, go back to main menu',
             ],
         );
@@ -200,6 +205,15 @@ final class GameConsole extends Command
         switch ($questionHelper->ask($input, $output, $choices)) {
             case 'load more':
                 $this->farm($input, $output, $questionHelper, ++$offset);
+                break;
+            case 'open':
+                $playerId = $style->ask('Which player? (provide a player id)');
+                $player = $this->playerRepository->fetchById((int) $playerId);
+
+                $style->text("Visit this url: {$player->url}");
+                $style->ask('Press ENTER to go back');
+
+                $this->farm($input, $output, $questionHelper, $offset);
                 break;
             case 'cancel':
                 $this->nextAction = 'main menu';
