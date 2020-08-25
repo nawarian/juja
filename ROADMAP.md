@@ -27,13 +27,15 @@ with the options "farm", "lvlup", "lvldown" and "manage".
 - [ ] Add "Battle" menu option to main menu
 - [ ] Fetch lock time (fetch from website)
 - [ ] Prevent battle attempts when locked
-- [ ] Implement game loop
-- [ ] Implement queue mechanism (use DB)
+- [x] Implement game loop
+- [x] Implement queue mechanism (~use DB~)
 - [ ] Implement "farm", "lvlup" and "lvldown" finders
-- [ ] Implement "Add player to queue" mechanism
+- [x] Implement "Add player to queue" mechanism
+- [x] Implement "List queue" mechanism
 - [ ] Implement "Remove player from queue"
 - [ ] Implement "Clear queue"
 - [ ] Implement queue handler
+- [ ] Add "enable auto-attack" from main menu
 
 **Queue Handler:**
 
