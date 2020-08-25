@@ -212,11 +212,19 @@ final class GameConsole extends Command
     private function clearScreen(InputInterface $input, OutputInterface $output): void
     {
         $cursor = new Cursor($output);
+        $terminal = new Terminal();
 
         $cursor->clearScreen();
 
         $this->fetchCurrentPlayer($input, $output);
         $this->printPlayerState($input, $output);
+
+        $mem = memory_get_usage(true) / 1024;
+        $cursor->moveToPosition(
+            $terminal->getWidth() - 15,
+            $terminal->getHeight() - 4
+        );
+        $output->write("Mem: {$mem} KB");
 
         $cursor->moveToPosition(0, 0);
     }
