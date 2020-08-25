@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Nawarian\KFStats\Commands;
 
 use Nawarian\KFStats\Commands\Traits\{AuthenticationTrait, ClearScreenTrait};
+use Nawarian\KFStats\Commands\AttackQueue\EnqueuePlayer;
+use Nawarian\KFStats\Commands\AttackQueue\ListQueue;
 use Nawarian\KFStats\Entities\Player\{Player, PlayerRepository};
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
+use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ChoiceQuestion;
@@ -34,9 +37,14 @@ final class Attack extends Command
     {
         $style = new SymfonyStyle($input, $output);
 
+        // Present current attack list
+        $listQueueCommand = new ListQueue($this->playerRepository);
+        $listQueueCommand->run($input, $output);
+
         $choices = new ChoiceQuestion(
             'What are you looking for?',
             [
+                'attack' => 'Attack a player you already know the ID',
                 'farm' => 'Find weaker players that will potentially yield good money',
                 'lvlup' => 'Find weaker players of higher level',
                 'lvldown' => 'Find weaker players of lower level so you lose experience',
@@ -45,12 +53,23 @@ final class Attack extends Command
 
         $searchType = $style->askQuestion($choices);
 
-        $this->clearScreen($input, $output);
-
         $offset = 0;
         while (true) {
             $players = [];
             switch ($searchType) {
+                case 'attack':
+                    $playerId = $style->ask('Which player? (provide a player id)');
+                    $player = $this->playerRepository->fetchById((int) $playerId);
+
+                    $enqueueCommand = new EnqueuePlayer($this->playerRepository);
+                    $enqueueCommandInput = new ArrayInput([
+                        '--player-url' => $player->url,
+                    ]);
+
+                    $enqueueCommand->run($enqueueCommandInput, $output);
+
+                    $style->ask('Press ENTER to go back');
+                    break(2);
                 case 'farm':
                     $players = $this->playerRepository->fetchPlayersWeakerThan($this->player, 5, $offset * 5);
                     break;
@@ -66,6 +85,8 @@ final class Attack extends Command
             }
 
             // Render whole table
+            $this->clearScreen($input, $output);
+
             $this->renderPlayerList($output, $players);
 
             $choices = new ChoiceQuestion(
@@ -80,7 +101,15 @@ final class Attack extends Command
 
             switch ($style->askQuestion($choices)) {
                 case 'attack':
-                    $style->note('This is not yet implemented.');
+                    $playerId = $style->ask('Which player? (provide a player id)');
+                    $player = $this->playerRepository->fetchById((int) $playerId);
+
+                    $enqueueCommand = new EnqueuePlayer($this->playerRepository);
+                    $enqueueCommandInput = new ArrayInput([
+                        '--player-url' => $player->url,
+                    ]);
+
+                    $enqueueCommand->run($enqueueCommandInput, $output);
 
                     $style->ask('Press ENTER to go back');
                     break;
