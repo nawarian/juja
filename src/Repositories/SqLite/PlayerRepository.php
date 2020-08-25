@@ -94,6 +94,9 @@ final class PlayerRepository implements \Nawarian\KFStats\Entities\Player\Player
                 AND player.armour <= :arm
                 AND player.oneHandedAttack <= :one
                 AND player.twoHandedAttack <= :two
+            ORDER BY
+                player.goldLost DESC
+                , player.createdAt DESC
             LIMIT :limit
             OFFSET :offset
         QUERY);
