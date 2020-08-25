@@ -100,7 +100,7 @@ final class GameConsole extends Command
         $menu = new ChoiceQuestion(
             'What would you like to do?',
             [
-                'find' => 'Find enemies',
+                'attack' => 'Find and attack other players',
                 'mission' => 'Mission',
                 'work' => 'Work on the Tavern',
                 'merch' => 'Shop w/ Merchant',
@@ -112,7 +112,7 @@ final class GameConsole extends Command
         );
 
         switch ($questionHelper->ask($input, $output, $menu)) {
-            case 'find':
+            case 'attack':
                 $this->clearScreen($input, $output);
                 $this->findPlayer($input, $output, $questionHelper);
                 return 0;
