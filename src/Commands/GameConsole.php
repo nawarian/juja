@@ -18,6 +18,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ChoiceQuestion;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
+use Symfony\Component\Console\Terminal;
 use Symfony\Component\DomCrawler\Crawler;
 
 final class GameConsole extends Command
@@ -194,31 +195,21 @@ final class GameConsole extends Command
     {
         $cursor = new Cursor($output);
 
-        $cursor->moveToPosition(0, 0);
         $cursor->clearScreen();
 
         $this->printPlayerState($output);
+
+        $cursor->moveToPosition(0, 0);
     }
 
     private function printPlayerState(OutputInterface $output): void
     {
-        $table = new Table($output);
+        $cursor = new Cursor($output);
+        $terminal = new Terminal();
+        $cursor->moveToPosition(0, $terminal->getHeight());
 
-        $output->writeln('');
-
-        $table
-            ->setHeaderTitle('Your current state')
-            ->setHeaders(['Player (Lv.)', 'HP (min./max.)', 'Exp'])
-            ->setRows([
-                [
-                    "{$this->player->name} (Lv. {$this->player->level})",
-                    "{$this->player->currentHP}/{$this->player->maxHP}",
-                    $this->player->experience,
-                ],
-            ]);
-
-        $table->render();
-
-        $output->writeln('');
+        $output->writeln(
+            "{$this->player->name} (Lv. {$this->player->level}) | HP: {$this->player->currentHP}/{$this->player->maxHP} | EXP: {$this->player->experience}"
+        );
     }
 }
