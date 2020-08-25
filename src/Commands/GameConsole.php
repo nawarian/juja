@@ -10,6 +10,7 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\UriFactoryInterface;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Cursor;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Helper\Table;
@@ -94,7 +95,7 @@ final class GameConsole extends Command
 
     private function mainMenu(InputInterface $input, OutputInterface $output, QuestionHelper $questionHelper): int
     {
-        $this->printPlayerState($output);
+        $this->clearScreen($output);
 
         $menu = new ChoiceQuestion(
             'What would you like to do?',
@@ -117,30 +118,10 @@ final class GameConsole extends Command
         return 0;
     }
 
-    private function printPlayerState(OutputInterface $output): void
-    {
-        $table = new Table($output);
-
-        $output->writeln('');
-
-        $table
-            ->setHeaderTitle('Your current state')
-            ->setHeaders(['Player (Lv.)', 'HP (min./max.)', 'Exp'])
-            ->setRows([
-                [
-                    "{$this->player->name} (Lv. {$this->player->level})",
-                    "{$this->player->currentHP}/{$this->player->maxHP}",
-                    $this->player->experience,
-                ],
-            ]);
-
-        $table->render();
-
-        $output->writeln('');
-    }
-
     private function findPlayer(InputInterface $input, OutputInterface $output, QuestionHelper $questionHelper): void
     {
+        $this->clearScreen($output);
+
         $choices = new ChoiceQuestion(
             'What are you looking for?',
             [
@@ -165,6 +146,7 @@ final class GameConsole extends Command
         QuestionHelper $questionHelper,
         int $offset
     ): void {
+        $this->clearScreen($output);
         $table = new Table($output);
 
         $playerRows = [];
@@ -187,8 +169,6 @@ final class GameConsole extends Command
 
         $table->render();
 
-        $this->printPlayerState($output);
-
         $choices = new ChoiceQuestion(
             'Load more or attack?',
             [
@@ -208,5 +188,37 @@ final class GameConsole extends Command
             default:
                 break;
         }
+    }
+
+    private function clearScreen(OutputInterface $output): void
+    {
+        $cursor = new Cursor($output);
+
+        $cursor->moveToPosition(0, 0);
+        $cursor->clearScreen();
+
+        $this->printPlayerState($output);
+    }
+
+    private function printPlayerState(OutputInterface $output): void
+    {
+        $table = new Table($output);
+
+        $output->writeln('');
+
+        $table
+            ->setHeaderTitle('Your current state')
+            ->setHeaders(['Player (Lv.)', 'HP (min./max.)', 'Exp'])
+            ->setRows([
+                [
+                    "{$this->player->name} (Lv. {$this->player->level})",
+                    "{$this->player->currentHP}/{$this->player->maxHP}",
+                    $this->player->experience,
+                ],
+            ]);
+
+        $table->render();
+
+        $output->writeln('');
     }
 }
