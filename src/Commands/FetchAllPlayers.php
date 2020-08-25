@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nawarian\KFStats\Commands;
 
 use DateTimeImmutable;
+use Nawarian\KFStats\Commands\Traits\AuthenticationTrait;
 use Nawarian\KFStats\Entities\Player\Player;
 use Nawarian\KFStats\Entities\Player\PlayerRepository;
 use GuzzleHttp\Cookie\CookieJar;

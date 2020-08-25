@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Nawarian\KFStats\Commands;
+namespace Nawarian\KFStats\Commands\Traits;
 
 use GuzzleHttp\Cookie\CookieJar;
 use GuzzleHttp\Cookie\CookieJarInterface;
