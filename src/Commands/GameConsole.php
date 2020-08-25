@@ -113,6 +113,7 @@ final class GameConsole extends Command
 
         switch ($questionHelper->ask($input, $output, $menu)) {
             case 'find':
+                $this->clearScreen($input, $output);
                 $this->findPlayer($input, $output, $questionHelper);
                 return 0;
             case 'update':
@@ -132,13 +133,14 @@ final class GameConsole extends Command
             $this->playerRepository,
         );
 
+        // Use same cookies as this session's
+        $command->setCookies($this->cookies);
+
         $command->run($input, $output);
     }
 
     private function findPlayer(InputInterface $input, OutputInterface $output, QuestionHelper $questionHelper): void
     {
-        $this->clearScreen($input, $output);
-
         $choices = new ChoiceQuestion(
             'What are you looking for?',
             [

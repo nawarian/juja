@@ -13,6 +13,7 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\UriFactoryInterface;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Cursor;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -40,6 +41,9 @@ final class FetchAllPlayers extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $console = new Cursor($output);
+        $console->clearScreen();
+
         $serverAddress = getenv('KF_SERVER');
         $account = getenv('KF_ACCOUNT');
         $password = getenv('KF_PASSWORD');
@@ -48,7 +52,9 @@ final class FetchAllPlayers extends Command
             $output->writeln('FATAL ERROR: check the .env file.');
         }
 
-        $this->login($output);
+        if ($this->cookies === null) {
+            $this->login($output);
+        }
 
         $csrf = function (string $responseBody) : string {
             $crawler = new Crawler($responseBody);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nawarian\KFStats\Commands;
 
 use GuzzleHttp\Cookie\CookieJar;
+use GuzzleHttp\Cookie\CookieJarInterface;
 use Nyholm\Psr7\Stream;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\{RequestFactoryInterface, RequestInterface, ResponseInterface, UriFactoryInterface};
@@ -22,6 +23,13 @@ trait AuthenticationTrait
     private PlayerRepository $playerRepository;
 
     private CookieJar $cookies;
+
+    public function setCookies(CookieJarInterface $cookieJar): self
+    {
+        $this->cookies = $cookieJar;
+
+        return $this;
+    }
 
     private function login(OutputInterface $output): void
     {
