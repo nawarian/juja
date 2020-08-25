@@ -18,6 +18,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ChoiceQuestion;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
+use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Console\Terminal;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -96,7 +97,7 @@ final class GameConsole extends Command
 
     private function mainMenu(InputInterface $input, OutputInterface $output, QuestionHelper $questionHelper): int
     {
-        $this->clearScreen($output);
+        $this->clearScreen($input, $output);
 
         $menu = new ChoiceQuestion(
             'What would you like to do?',
@@ -121,7 +122,7 @@ final class GameConsole extends Command
 
     private function findPlayer(InputInterface $input, OutputInterface $output, QuestionHelper $questionHelper): void
     {
-        $this->clearScreen($output);
+        $this->clearScreen($input, $output);
 
         $choices = new ChoiceQuestion(
             'What are you looking for?',
@@ -147,7 +148,7 @@ final class GameConsole extends Command
         QuestionHelper $questionHelper,
         int $offset
     ): void {
-        $this->clearScreen($output);
+        $this->clearScreen($input, $output);
         $table = new Table($output);
 
         $playerRows = [];
@@ -191,25 +192,30 @@ final class GameConsole extends Command
         }
     }
 
-    private function clearScreen(OutputInterface $output): void
+    private function clearScreen(InputInterface $input, OutputInterface $output): void
     {
         $cursor = new Cursor($output);
 
         $cursor->clearScreen();
 
-        $this->printPlayerState($output);
+        $this->printPlayerState($input, $output);
 
         $cursor->moveToPosition(0, 0);
     }
 
-    private function printPlayerState(OutputInterface $output): void
+    private function printPlayerState(InputInterface $input, OutputInterface $output): void
     {
         $cursor = new Cursor($output);
         $terminal = new Terminal();
-        $cursor->moveToPosition(0, $terminal->getHeight());
+        $style = new SymfonyStyle($input, $output);
+        $totalRows = $terminal->getHeight();
 
-        $output->writeln(
-            "{$this->player->name} (Lv. {$this->player->level}) | HP: {$this->player->currentHP}/{$this->player->maxHP} | EXP: {$this->player->experience}"
+        $cursor->moveToPosition(0, $totalRows);
+
+        // Write player's status
+        $cursor->moveToPosition(0, $totalRows);
+        $style->success(
+            "{$this->player->name} (Lv. {$this->player->level}) | HP: {$this->player->currentHP}/{$this->player->maxHP} | EXP: {$this->player->experience}",
         );
     }
 }
