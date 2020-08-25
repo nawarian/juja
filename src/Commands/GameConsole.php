@@ -48,7 +48,7 @@ final class GameConsole extends Command
         $questionHelper = new QuestionHelper();
         $output->writeln('Welcome to the KF Game Console!');
 
-        $loginQuestion = new ConfirmationQuestion('Before starting we need to log in. Shall we do it now? [y/N] ', false);
+        $loginQuestion = new ConfirmationQuestion('Before starting we need to log in. Shall we do it now? [Y/n] ', true);
         $loginAllowed = $questionHelper->ask($input, $output, $loginQuestion);
 
         if (false === $loginAllowed) {
@@ -94,6 +94,8 @@ final class GameConsole extends Command
 
     private function mainMenu(InputInterface $input, OutputInterface $output, QuestionHelper $questionHelper): int
     {
+        $this->printPlayerState($output);
+
         $menu = new ChoiceQuestion(
             'What would you like to do?',
             [
@@ -113,6 +115,28 @@ final class GameConsole extends Command
         }
 
         return 0;
+    }
+
+    private function printPlayerState(OutputInterface $output): void
+    {
+        $table = new Table($output);
+
+        $output->writeln('');
+
+        $table
+            ->setHeaderTitle('Your current state')
+            ->setHeaders(['Player (Lv.)', 'HP (min./max.)', 'Exp'])
+            ->setRows([
+                [
+                    "{$this->player->name} (Lv. {$this->player->level})",
+                    "{$this->player->currentHP}/{$this->player->maxHP}",
+                    $this->player->experience,
+                ],
+            ]);
+
+        $table->render();
+
+        $output->writeln('');
     }
 
     private function findPlayer(InputInterface $input, OutputInterface $output, QuestionHelper $questionHelper): void
@@ -162,6 +186,8 @@ final class GameConsole extends Command
             ->setRows($playerRows);
 
         $table->render();
+
+        $this->printPlayerState($output);
 
         $choices = new ChoiceQuestion(
             'Load more or attack?',
