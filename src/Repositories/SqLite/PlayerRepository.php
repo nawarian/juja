@@ -27,7 +27,7 @@ final class PlayerRepository implements \Nawarian\KFStats\Entities\Player\Player
         }, $propKeys);
 
         $insert = sprintf(
-            'INSERT INTO player (%s) VALUES (%s)',
+            'INSERT OR REPLACE INTO player (%s) VALUES (%s)',
             implode(',', $propKeys),
             implode(',', $propPlaceholders)
         );

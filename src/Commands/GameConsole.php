@@ -63,8 +63,6 @@ final class GameConsole extends Command
 
         $output->writeln("We're in! Let's find out who you are.");
 
-        $this->fetchCurrentPlayer($input, $output);
-
         $exitCode = 0;
         while ($this->nextAction !== 'quit' && $exitCode === 0) {
             $exitCode = $this->mainMenu($input, $output, $questionHelper);
@@ -108,6 +106,8 @@ final class GameConsole extends Command
                 'merch' => 'Shop w/ Merchant',
                 'bazaar' => 'Shop in Bazaar',
                 'gamble' => 'Gamble in Bazaar',
+
+                'update' => 'Update whole database (fetch from highscore)',
             ],
         );
 
@@ -115,9 +115,24 @@ final class GameConsole extends Command
             case 'find':
                 $this->findPlayer($input, $output, $questionHelper);
                 return 0;
+            case 'update':
+                $this->updateDatabase($input, $output, $questionHelper);
+                return 0;
         }
 
         return 0;
+    }
+
+    private function updateDatabase(InputInterface $input, OutputInterface $output, QuestionHelper $questionHelper): void
+    {
+        $command = new FetchAllPlayers(
+            $this->httpClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->playerRepository,
+        );
+
+        $command->run($input, $output);
     }
 
     private function findPlayer(InputInterface $input, OutputInterface $output, QuestionHelper $questionHelper): void
@@ -198,6 +213,7 @@ final class GameConsole extends Command
 
         $cursor->clearScreen();
 
+        $this->fetchCurrentPlayer($input, $output);
         $this->printPlayerState($input, $output);
 
         $cursor->moveToPosition(0, 0);
