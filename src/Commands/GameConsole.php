@@ -25,6 +25,8 @@ final class GameConsole extends Command
 
     private Player $player;
 
+    private string $nextAction = '';
+
     public function __construct(
         ClientInterface $httpClient,
         RequestFactoryInterface $requestFactory,
@@ -60,7 +62,12 @@ final class GameConsole extends Command
 
         $this->fetchCurrentPlayer($input, $output);
 
-        return $this->mainMenu($input, $output, $questionHelper);
+        $exitCode = 0;
+        while ($this->nextAction !== 'quit' && $exitCode === 0) {
+            $exitCode = $this->mainMenu($input, $output, $questionHelper);
+        }
+
+        return $exitCode;
     }
 
     private function fetchCurrentPlayer(InputInterface $input, OutputInterface $output): void
@@ -102,8 +109,6 @@ final class GameConsole extends Command
         switch ($questionHelper->ask($input, $output, $menu)) {
             case 'find':
                 $this->findPlayer($input, $output, $questionHelper);
-                break;
-            default:
                 return 0;
         }
 
@@ -128,7 +133,6 @@ final class GameConsole extends Command
         }
 
         $output->writeln('');
-        $this->mainMenu($input, $output, $questionHelper);
     }
 
     private function farm(
@@ -173,8 +177,9 @@ final class GameConsole extends Command
                 $this->farm($input, $output, $questionHelper, ++$offset);
                 break;
             case 'cancel':
+                $this->nextAction = 'main menu';
+                break;
             default:
-                $this->mainMenu($input, $output, $questionHelper);
                 break;
         }
     }
