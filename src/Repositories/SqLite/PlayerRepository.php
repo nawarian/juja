@@ -53,8 +53,12 @@ final class PlayerRepository implements \Nawarian\KFStats\Entities\Player\Player
         ]);
 
         $player = new Player();
-        $rawPLayer = $prepared->fetchObject();
-        foreach (get_object_vars($rawPLayer) as $property => $value) {
+        $rawPlayer = $prepared->fetchObject();
+        if ($rawPlayer === false) {
+            throw new \RuntimeException("Could not find player of id {$playerId}");
+        }
+
+        foreach (get_object_vars($rawPlayer) as $property => $value) {
             switch ($property) {
                 case 'name':
                 case 'url':

@@ -56,7 +56,12 @@ final class GameConsole extends Command
         $this->login($output);
 
         $output->writeln("We're in! Let's find out who you are.");
-        $this->fetchCurrentPlayer();
+        try {
+            $this->fetchCurrentPlayer();
+        } catch (\Throwable $e) {
+            $this->updateDatabase($input, $output, $questionHelper);
+            $this->fetchCurrentPlayer();
+        }
 
         $exitCode = 0;
         while ($this->nextAction !== 'quit' && $exitCode === 0) {
