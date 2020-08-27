@@ -81,6 +81,17 @@ final class PlayerRepository implements \Nawarian\Juja\Entities\Player\PlayerRep
         return $player;
     }
 
+    public function fetchByUrl(string $url): Player
+    {
+        $prepared = $this->client->prepare('SELECT id FROM player WHERE player.url = :url');
+
+        $prepared->execute(['url' => $url]);
+
+        $playerId = (int) $prepared->fetchColumn(0);
+
+        return $this->fetchById($playerId);
+    }
+
     public function fetchPlayersWeakerThan(Player $player, int $limit, int $offset): iterable
     {
         $prepared = $this->client->prepare(<<<QUERY

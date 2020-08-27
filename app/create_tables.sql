@@ -1,4 +1,4 @@
-CREATE TABLE player (
+CREATE TABLE IF NOT EXISTS player (
     id INT NOT NULL PRIMARY KEY,
     name TEXT NOT NULL,
     level INT NOT NULL,
@@ -25,4 +25,12 @@ CREATE TABLE player (
     goldLost INT NOT NULL,
     damageToEnemies INT NOT NULL,
     damageFromEnemies INT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS battle_report (
+    battleId INT NOT NULL PRIMARY KEY,
+    attackerId INT NOT NULL,
+    victimId INT NOT NULL,
+    winnerId INT,
+    `date` DATETIME
 );
