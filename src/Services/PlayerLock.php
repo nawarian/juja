@@ -39,7 +39,7 @@ final class PlayerLock
 
     public function getPlayerBattleLockInSeconds(): int
     {
-        $missionPage = $this->createAuthenticatedRequest('GET', '/raubzug');
+        $missionPage = $this->createAuthenticatedRequest('GET', '/raubzug/');
         $missionPageResponse = $this->httpClient->sendRequest($missionPage);
         $rawHTML = $missionPageResponse->getBody()->getContents();
 
