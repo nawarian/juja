@@ -6,8 +6,8 @@ namespace Nawarian\Juja\Commands;
 
 use DateTimeImmutable;
 use Nawarian\Juja\Commands\Traits\AuthenticationTrait;
-use Nawarian\KFStats\Entities\Player\Player;
-use Nawarian\KFStats\Entities\Player\PlayerRepository;
+use Nawarian\Juja\Entities\Player\Player;
+use Nawarian\Juja\Entities\Player\PlayerRepository;
 use GuzzleHttp\Cookie\CookieJar;
 use Nyholm\Psr7\Stream;
 use Psr\Http\Client\ClientInterface;

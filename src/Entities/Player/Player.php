@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Nawarian\KFStats\Entities\Player;
+namespace Nawarian\Juja\Entities\Player;
 
 use DateTimeInterface;
 

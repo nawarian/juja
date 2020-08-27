@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Nawarian\Juja\Commands\Traits;
 
 use Symfony\Component\Console\{Cursor, Input\InputInterface, Output\OutputInterface, Style\SymfonyStyle, Terminal};
-use Nawarian\KFStats\Entities\Player\Player;
+use Nawarian\Juja\Entities\Player\Player;
 
 trait ClearScreenTrait
 {

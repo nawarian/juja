@@ -11,9 +11,10 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\{RequestFactoryInterface, RequestInterface, ResponseInterface, UriFactoryInterface};
 use RuntimeException;
 use Symfony\Component\Console\Helper\ProgressBar;
+use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DomCrawler\Crawler;
-use Nawarian\KFStats\Entities\Player\PlayerRepository;
+use Nawarian\Juja\Entities\Player\PlayerRepository;
 
 trait AuthenticationTrait
 {
@@ -174,6 +175,10 @@ trait AuthenticationTrait
 
     private function createAuthenticatedRequest(string $method, string $path): RequestInterface
     {
+        if (0 === $this->cookies->count()) {
+            $this->login(new NullOutput());
+        }
+
         $serverAddress = trim(getenv('KF_SERVER'), '/');
         $uri = $this->uriFactory->createUri("{$serverAddress}/{$path}");
 

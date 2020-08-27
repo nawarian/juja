@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Nawarian\KFStats\Repositories\InMemory;
+namespace Nawarian\Juja\Repositories\InMemory;
 
-use Nawarian\KFStats\Entities\Player\Player;
+use Nawarian\Juja\Entities\Player\Player;
 use RuntimeException;
 
-final class PlayerRepository implements \Nawarian\KFStats\Entities\Player\PlayerRepository
+final class PlayerRepository implements \Nawarian\Juja\Entities\Player\PlayerRepository
 {
     private array $players = [];
 
@@ -25,5 +25,10 @@ final class PlayerRepository implements \Nawarian\KFStats\Entities\Player\Player
         }
 
         return $player;
+    }
+
+    public function fetchPlayersWeakerThan(Player $player, int $limit, int $offset): iterable
+    {
+        return [];
     }
 }

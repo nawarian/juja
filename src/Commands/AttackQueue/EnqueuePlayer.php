@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Nawarian\Juja\Commands\AttackQueue;
 
 use Nawarian\Juja\Commands\Traits\{AuthenticationTrait, ClearScreenTrait};
-use Nawarian\KFStats\Entities\Player\PlayerRepository;
+use Nawarian\Juja\Entities\Player\PlayerRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;

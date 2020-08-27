@@ -6,7 +6,7 @@ namespace Nawarian\Juja\Commands;
 
 use GuzzleHttp\Cookie\CookieJar;
 use Nawarian\Juja\Commands\Traits\{AuthenticationTrait, ClearScreenTrait};
-use Nawarian\KFStats\Entities\Player\PlayerRepository;
+use Nawarian\Juja\Entities\Player\PlayerRepository;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\{RequestFactoryInterface, UriFactoryInterface};
 use Symfony\Component\Console\Command\Command;

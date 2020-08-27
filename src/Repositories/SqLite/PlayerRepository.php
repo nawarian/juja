@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Nawarian\KFStats\Repositories\SqLite;
+namespace Nawarian\Juja\Repositories\SqLite;
 
 use DateTimeImmutable;
 use DateTimeInterface;
 use PDO;
-use Nawarian\KFStats\Entities\Player\Player;
+use Nawarian\Juja\Entities\Player\Player;
 
-final class PlayerRepository implements \Nawarian\KFStats\Entities\Player\PlayerRepository
+final class PlayerRepository implements \Nawarian\Juja\Entities\Player\PlayerRepository
 {
     private PDO $client;
 

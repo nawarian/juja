@@ -7,7 +7,7 @@ namespace Nawarian\Juja\Commands;
 use Nawarian\Juja\Commands\Traits\{AuthenticationTrait, ClearScreenTrait};
 use Nawarian\Juja\Commands\AttackQueue\EnqueuePlayer;
 use Nawarian\Juja\Commands\AttackQueue\ListQueue;
-use Nawarian\KFStats\Entities\Player\{Player, PlayerRepository};
+use Nawarian\Juja\Entities\Player\{Player, PlayerRepository};
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\ArrayInput;
