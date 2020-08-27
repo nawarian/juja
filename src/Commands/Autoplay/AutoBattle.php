@@ -5,15 +5,20 @@ declare(strict_types=1);
 namespace Nawarian\Juja\Commands\Autoplay;
 
 use GuzzleHttp\Cookie\CookieJar;
+use Nawarian\Juja\Commands\FetchAllBattleReports;
 use Nawarian\Juja\Commands\Traits\AuthenticationTrait;
+use Nawarian\Juja\Entities\Battle\BattleReportRepository;
 use Nawarian\Juja\Entities\Player\Player;
 use Nawarian\Juja\Entities\Player\PlayerRepository;
 use Nawarian\Juja\Services\PlayerLock;
+use Nyholm\Psr7\Stream;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\UriFactoryInterface;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\DomCrawler\Crawler;
@@ -26,12 +31,15 @@ final class AutoBattle extends Command
 
     private PlayerLock $playerLockService;
 
+    private BattleReportRepository $battleReportRepository;
+
     public function __construct(
         ClientInterface $httpClient,
         RequestFactoryInterface $requestFactory,
         UriFactoryInterface $uriFactory,
         PlayerRepository $playerRepository,
-        PlayerLock $playerLockService
+        PlayerLock $playerLockService,
+        BattleReportRepository $battleReportRepository
     ) {
         parent::__construct('AutoBattle');
 
@@ -40,6 +48,7 @@ final class AutoBattle extends Command
         $this->uriFactory = $uriFactory;
         $this->playerRepository = $playerRepository;
         $this->playerLockService = $playerLockService;
+        $this->battleReportRepository = $battleReportRepository;
 
         $this->cookies = new CookieJar();
         $this->playerLockService->setCookies($this->cookies);
@@ -65,9 +74,9 @@ final class AutoBattle extends Command
                 while ($lockInSeconds > 0) {
                     $progress->advance(1);
 
-                    sleep($lockInSeconds--);
+                    sleep(1);
+                    $lockInSeconds--;
                 }
-
                 $progress->finish();
             } else if ($lockInSeconds === 0) {
                 $nextVictimUrl = $this->dequeueFromAttackQueue();
@@ -117,6 +126,41 @@ final class AutoBattle extends Command
     private function attack(Player $victim, SymfonyStyle $style): void
     {
         $style->note("Attacking a player: {$victim->name}");
+
+        $attackPageRequest = $this->createAuthenticatedRequest('GET', '/raubzug/gegner/');
+        $attackPageRequest = $attackPageRequest->withUri(
+            $attackPageRequest->getUri()->withQuery('searchuserid=' . $victim->id),
+        );
+
+        $attackPageResponse = $this->httpClient->sendRequest($attackPageRequest);
+        $crawler = new Crawler($attackPageResponse->getBody()->getContents());
+
+        $form = $crawler->filter('form')->form();
+        $formEncodedData = [];
+        foreach ($form->getPhpValues() as $field => $value) {
+            $value = urlencode($value);
+            $formEncodedData[] = "{$field}={$value}";
+        }
+        $formEncodedData = implode('&', $formEncodedData);
+
+        $this->httpClient->sendRequest(
+            $this->createAuthenticatedRequest($form->getMethod(), '/')
+                ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
+                ->withBody(Stream::create($formEncodedData))
+        );
+
+        $command = new FetchAllBattleReports(
+            $this->httpClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->playerRepository,
+            $this->battleReportRepository,
+        );
+
+        // Use same cookies as this session's
+        $command->setCookies($this->cookies);
+
+        $command->run(new ArgvInput([]), new NullOutput());
     }
 
     private function fetchCurrentPlayer(): void
