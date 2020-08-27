@@ -5,7 +5,9 @@ declare(strict_types=1);
 use DI\ContainerBuilder;
 use GuzzleHttp\Client;
 use Nawarian\Juja\Entities\Player\PlayerRepository;
+use Nawarian\Juja\Repositories\SqLite\BattleReportRepository as SqLiteBattleReportRepository;
 use Nawarian\Juja\Repositories\SqLite\PlayerRepository as SqLitePlayerRepository;
+use Nawarian\Juja\Entities\Battle\BattleReportRepository;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Symfony\Component\Console\Input\{ArgvInput, InputInterface};
 use Symfony\Component\Console\Output\{OutputInterface, ConsoleOutput};
@@ -28,5 +30,7 @@ return function (ContainerBuilder $containerBuilder) {
 
         PDO::class => function () { return new PDO('sqlite:kf.db'); },
         PlayerRepository::class => autowire(SqLitePlayerRepository::class),
+
+        BattleReportRepository::class => autowire(SqLiteBattleReportRepository::class),
     ]);
 };
