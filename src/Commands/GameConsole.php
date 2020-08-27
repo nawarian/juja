@@ -6,6 +6,7 @@ namespace Nawarian\Juja\Commands;
 
 use GuzzleHttp\Cookie\CookieJar;
 use Nawarian\Juja\Commands\Traits\{AuthenticationTrait, ClearScreenTrait};
+use Nawarian\Juja\Entities\Battle\BattleReportRepository;
 use Nawarian\Juja\Entities\Player\PlayerRepository;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\{RequestFactoryInterface, UriFactoryInterface};
@@ -22,13 +23,16 @@ final class GameConsole extends Command
     use AuthenticationTrait;
     use ClearScreenTrait;
 
+    private BattleReportRepository $battleReportRepository;
+
     private string $nextAction = '';
 
     public function __construct(
         ClientInterface $httpClient,
         RequestFactoryInterface $requestFactory,
         UriFactoryInterface $uriFactory,
-        PlayerRepository $playerRepository
+        PlayerRepository $playerRepository,
+        BattleReportRepository $battleReportRepository
     ) {
         parent::__construct();
 
@@ -36,6 +40,7 @@ final class GameConsole extends Command
         $this->requestFactory = $requestFactory;
         $this->uriFactory = $uriFactory;
         $this->playerRepository = $playerRepository;
+        $this->battleReportRepository = $battleReportRepository;
 
         $this->cookies = new CookieJar();
     }
@@ -109,6 +114,19 @@ final class GameConsole extends Command
             $this->requestFactory,
             $this->uriFactory,
             $this->playerRepository,
+        );
+
+        // Use same cookies as this session's
+        $command->setCookies($this->cookies);
+
+        $command->run($input, $output);
+
+        $command = new FetchAllBattleReports(
+            $this->httpClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->playerRepository,
+            $this->battleReportRepository,
         );
 
         // Use same cookies as this session's

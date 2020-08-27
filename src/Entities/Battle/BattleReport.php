@@ -10,7 +10,7 @@ final class BattleReport
 {
     public int $battleId;
 
-    public int $attackedId;
+    public int $attackerId;
 
     public int $victimId;
 
