@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Nawarian\KFStats\Commands\Traits;
+namespace Nawarian\Juja\Commands\Traits;
 
 use Symfony\Component\Console\{Cursor, Input\InputInterface, Output\OutputInterface, Style\SymfonyStyle, Terminal};
 use Nawarian\KFStats\Entities\Player\Player;

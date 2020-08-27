@@ -2,7 +2,7 @@
 
 use DI\ContainerBuilder;
 use Dotenv\Dotenv;
-use Nawarian\KFStats\Commands\GameConsole;
+use Nawarian\Juja\Commands\GameConsole;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 

@@ -1,6 +1,6 @@
 {
-    "name": "nawarian/kfstats",
-    "description": "A Knight Fight game stats fetcher",
+    "name": "nawarian/juja",
+    "description": "A Knight Fight busy game bot. Jujujuju.",
     "type": "project",
     "require": {
         "php": ">=7.4",

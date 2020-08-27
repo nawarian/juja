@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Nawarian\KFStats\Commands;
+namespace Nawarian\Juja\Commands;
 
 use DateTimeImmutable;
-use Nawarian\KFStats\Commands\Traits\AuthenticationTrait;
+use Nawarian\Juja\Commands\Traits\AuthenticationTrait;
 use Nawarian\KFStats\Entities\Player\Player;
 use Nawarian\KFStats\Entities\Player\PlayerRepository;
 use GuzzleHttp\Cookie\CookieJar;

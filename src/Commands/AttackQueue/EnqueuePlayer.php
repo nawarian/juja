@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Nawarian\KFStats\Commands\AttackQueue;
+namespace Nawarian\Juja\Commands\AttackQueue;
 
-use Nawarian\KFStats\Commands\Traits\{AuthenticationTrait, ClearScreenTrait};
+use Nawarian\Juja\Commands\Traits\{AuthenticationTrait, ClearScreenTrait};
 use Nawarian\KFStats\Entities\Player\PlayerRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;

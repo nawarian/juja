@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Nawarian\KFStats\Commands;
+namespace Nawarian\Juja\Commands;
 
 use GuzzleHttp\Cookie\CookieJar;
-use Nawarian\KFStats\Commands\Traits\{AuthenticationTrait, ClearScreenTrait};
+use Nawarian\Juja\Commands\Traits\{AuthenticationTrait, ClearScreenTrait};
 use Nawarian\KFStats\Entities\Player\PlayerRepository;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\{RequestFactoryInterface, UriFactoryInterface};
