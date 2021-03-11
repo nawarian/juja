@@ -74,7 +74,8 @@ final class Attack extends Command
                     $players = $this->playerRepository->fetchPlayersWeakerThan($this->player, 5, $offset * 5);
                     break;
                 case 'lvlup':
-                    // $players = ...
+                    $players = $this->playerRepository->fetchPlayersWeakerAndWithHigherLevelThan($this->player, 5, $offset * 5);
+                    break;
                 case 'lvldown':
                     // $players = ...
                     $style->note('This is not yet implemented.');

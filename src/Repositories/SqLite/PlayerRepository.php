@@ -142,4 +142,49 @@ final class PlayerRepository implements \Nawarian\Juja\Entities\Player\PlayerRep
 
         return $result;
     }
+
+    public function fetchPlayersWeakerAndWithHigherLevelThan(Player $player, int $limit, int $offset): iterable
+    {
+        $prepared = $this->client->prepare(<<<QUERY
+            SELECT
+                player.id
+            FROM player
+            WHERE
+                player.id <> :id
+                AND player.strength <= :str
+                AND player.stamina <= :sta
+                AND player.fightingAbility <= :parry
+                AND player.parry <= :fa
+
+                AND player.level > :level
+            ORDER BY
+                player.goldLost DESC
+                , player.createdAt DESC
+            LIMIT :limit
+            OFFSET :offset
+        QUERY);
+
+        $prepared->execute([
+            'id' => $player->id,
+            'level' => $player->level,
+
+            'str' => $player->strength,
+            'sta' => $player->stamina,
+            //'dex' => $player->dexterity,
+            'fa' => $player->fightingAbility,
+            'parry' => $player->parry,
+
+            'limit' => $limit,
+            'offset' => $offset,
+        ]);
+
+        $ids = $prepared->fetchAll(PDO::FETCH_COLUMN);
+
+        $result = [];
+        foreach ($ids as $weakerPlayerId) {
+            $result[] = $this->fetchById((int) $weakerPlayerId);
+        }
+
+        return $result;
+    }
 }

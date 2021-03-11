@@ -13,4 +13,6 @@ interface PlayerRepository
     public function fetchByUrl(string $url): Player;
 
     public function fetchPlayersWeakerThan(Player $player, int $limit, int $offset): iterable;
+
+    public function fetchPlayersWeakerAndWithHigherLevelThan(Player $player, int $limit, int $offset): iterable;
 }

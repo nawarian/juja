@@ -31,4 +31,9 @@ final class PlayerRepository implements \Nawarian\Juja\Entities\Player\PlayerRep
     {
         return [];
     }
+
+    public function fetchPlayersWeakerAndWithHigherLevelThan(Player $player, int $limit, int $offset): iterable
+    {
+        return [];
+    }
 }
